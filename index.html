@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Attendance System</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #06070f;
+    --bg-card: #0e1020;
+    --bg-panel: #131629;
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --gold-dim: #8a6f2e;
+    --blue-accent: #3d7aed;
+    --blue-glow: #1e4fc4;
+    --success: #2ecc71;
+    --danger: #e74c3c;
+    --text-primary: #e8e0d0;
+    --text-muted: #7a7a9a;
+    --border: rgba(201,168,76,0.2);
+    --border-bright: rgba(201,168,76,0.5);
+    --glow: 0 0 20px rgba(201,168,76,0.15);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: 'Raleway', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 10%, rgba(61,122,237,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 90%, rgba(201,168,76,0.06) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Header */
+  header {
+    position: relative;
+    z-index: 10;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(14,16,32,0.98) 0%, rgba(10,11,22,0.95) 100%);
+    backdrop-filter: blur(12px);
+    padding: 18px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-icon {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 15px rgba(201,168,76,0.3);
+  }
+
+  .logo-text h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.25rem;
+    color: var(--gold-light);
+    letter-spacing: 2px;
+    font-weight: 600;
+  }
+
+  .logo-text p {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .clock {
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    color: var(--gold);
+    letter-spacing: 2px;
+    text-align: right;
+  }
+
+  .clock .date-str {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 3px;
+    display: block;
+  }
+
+  .btn-download {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #1d4ed8, #1e3a8a);
+    border: 1px solid rgba(61,122,237,0.5);
+    color: #93c5fd;
+    padding: 10px 22px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-decoration: none;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(30,79,196,0.3);
+  }
+
+  .btn-download:hover {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    box-shadow: 0 6px 20px rgba(30,79,196,0.5);
+    transform: translateY(-1px);
+    color: #bfdbfe;
+  }
+
+  /* Nav Tabs */
+  .tabs {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    gap: 0;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+  }
+
+  .tab {
+    padding: 16px 28px;
+    cursor: pointer;
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tab:hover { color: var(--gold); }
+  .tab.active {
+    color: var(--gold-light);
+    border-bottom-color: var(--gold);
+    background: rgba(201,168,76,0.05);
+  }
+
+  /* Main layout */
+  main {
+    position: relative;
+    z-index: 5;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 30px 40px;
+  }
+
+  .panel {
+    display: none;
+  }
+  .panel.active { display: block; }
+
+  /* Camera section */
+  .recognize-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 24px;
+  }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4), var(--glow);
+  }
+
+  .card-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(90deg, rgba(201,168,76,0.05) 0%, transparent 100%);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-title {
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
+    color: var(--gold);
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-body { padding: 24px; }
+
+  /* Camera */
+  .camera-wrapper {
+    position: relative;
+    background: #030408;
+    border-radius: 10px;
+    overflow: hidden;
+    aspect-ratio: 4/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #videoFeed {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+    transform: scaleX(-1);
+  }
+
+  #overlayCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    transform: scaleX(-1);
+  }
+
+  .camera-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    color: var(--text-muted);
+  }
+
+  .camera-placeholder .icon {
+    font-size: 64px;
+    opacity: 0.3;
+  }
+
+  .camera-placeholder p {
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* Scanning animation */
+  .scan-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    box-shadow: 0 0 12px var(--gold);
+    animation: scan 2s linear infinite;
+    display: none;
+  }
+
+  @keyframes scan {
+    0% { top: 0; opacity: 1; }
+    90% { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+  }
+
+  .camera-active .scan-line { display: block; }
+  .camera-active #videoFeed { display: block; }
+  .camera-active .camera-placeholder { display: none; }
+
+  /* Corner decorations */
+  .corner { position: absolute; width: 20px; height: 20px; }
+  .corner-tl { top: 10px; left: 10px; border-top: 2px solid var(--gold); border-left: 2px solid var(--gold); }
+  .corner-tr { top: 10px; right: 10px; border-top: 2px solid var(--gold); border-right: 2px solid var(--gold); }
+  .corner-bl { bottom: 10px; left: 10px; border-bottom: 2px solid var(--gold); border-left: 2px solid var(--gold); }
+  .corner-br { bottom: 10px; right: 10px; border-bottom: 2px solid var(--gold); border-right: 2px solid var(--gold); }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    width: 100%;
+  }
+
+  .btn-gold {
+    background: linear-gradient(135deg, var(--gold), #8a6220);
+    color: #1a1000;
+    box-shadow: 0 4px 14px rgba(201,168,76,0.3);
+  }
+  .btn-gold:hover {
+    box-shadow: 0 6px 22px rgba(201,168,76,0.5);
+    transform: translateY(-1px);
+  }
+
+  .btn-danger {
+    background: linear-gradient(135deg, #7f1d1d, #991b1b);
+    color: #fca5a5;
+    border: 1px solid rgba(239,68,68,0.3);
+  }
+  .btn-danger:hover { background: linear-gradient(135deg, #991b1b, #b91c1c); }
+
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border-bright);
+    color: var(--gold);
+  }
+  .btn-outline:hover { background: rgba(201,168,76,0.1); }
+
+  .btn-success {
+    background: linear-gradient(135deg, #065f46, #047857);
+    color: #6ee7b7;
+    border: 1px solid rgba(52,211,153,0.3);
+  }
+  .btn-success:hover { background: linear-gradient(135deg, #047857, #059669); }
+
+  /* Cam controls */
+  .cam-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  /* Status feed */
+  .status-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 340px;
+    overflow-y: auto;
+  }
+
+  .status-feed::-webkit-scrollbar { width: 4px; }
+  .status-feed::-webkit-scrollbar-track { background: transparent; }
+  .status-feed::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 4px; }
+
+  .status-item {
+    padding: 14px 16px;
+    border-radius: 8px;
+    border-left: 3px solid;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .status-item.success {
+    background: rgba(46,204,113,0.08);
+    border-color: var(--success);
+  }
+  .status-item.warning {
+    background: rgba(201,168,76,0.08);
+    border-color: var(--gold);
+  }
+  .status-item.error {
+    background: rgba(231,76,60,0.08);
+    border-color: var(--danger);
+  }
+  .status-item .s-name { font-weight: 600; font-size: 0.9rem; }
+  .status-item .s-msg { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+  .status-item .s-time { font-size: 0.7rem; color: var(--text-muted); float: right; }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    text-align: center;
+  }
+  .stat-card .val {
+    font-family: 'Cinzel', serif;
+    font-size: 2rem;
+    color: var(--gold-light);
+    line-height: 1;
+  }
+  .stat-card .lbl {
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+
+  /* Register panel */
+  .register-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .form-group { margin-bottom: 18px; }
+  .form-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-bottom: 8px;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus { border-color: var(--gold-dim); }
+
+  /* Register camera */
+  .reg-cam-wrapper {
+    position: relative;
+    background: #030408;
+    border-radius: 10px;
+    overflow: hidden;
+    aspect-ratio: 4/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #regVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+    transform: scaleX(-1);
+  }
+  #regCanvas { display: none; }
+
+  .captured-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+    border-radius: 10px;
+  }
+
+  /* Table */
+  .table-wrapper {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+
+  thead {
+    background: linear-gradient(90deg, rgba(201,168,76,0.12), rgba(201,168,76,0.05));
+  }
+
+  thead th {
+    padding: 14px 18px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    color: var(--gold);
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(201,168,76,0.06);
+    transition: background 0.15s;
+  }
+  tbody tr:hover { background: rgba(201,168,76,0.04); }
+  tbody tr:last-child { border-bottom: none; }
+
+  tbody td {
+    padding: 13px 18px;
+    color: var(--text-primary);
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .badge-present { background: rgba(46,204,113,0.15); color: #2ecc71; border: 1px solid rgba(46,204,113,0.3); }
+
+  /* Students list */
+  .student-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+  }
+
+  .student-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    transition: all 0.2s;
+    animation: fadeUp 0.3s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .student-card:hover { border-color: var(--gold-dim); transform: translateY(-2px); }
+
+  .student-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold-dim), #3d1a00);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    margin: 0 auto 10px;
+    border: 2px solid rgba(201,168,76,0.3);
+  }
+  .student-name { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); word-break: break-word; }
+  .student-del {
+    margin-top: 8px;
+    font-size: 0.7rem;
+    color: var(--danger);
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.15s;
+    background: none;
+    border: none;
+    font-family: 'Raleway', sans-serif;
+  }
+  .student-del:hover { opacity: 1; }
+
+  /* Toast */
+  #toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-bright);
+    border-radius: 10px;
+    padding: 14px 20px;
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    z-index: 9999;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s;
+    max-width: 320px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+  }
+  #toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Mode indicator */
+  .mode-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .mode-idle { background: rgba(122,122,154,0.15); color: var(--text-muted); }
+  .mode-active { background: rgba(46,204,113,0.15); color: var(--success); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .mode-active .dot { animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+  }
+  .empty-state .icon { font-size: 48px; opacity: 0.3; margin-bottom: 12px; }
+  .empty-state p { font-size: 0.85rem; letter-spacing: 1px; }
+
+  @media (max-width: 900px) {
+    .recognize-grid, .register-grid { grid-template-columns: 1fr; }
+    header { padding: 14px 20px; }
+    main { padding: 20px; }
+    .tabs { padding: 0 20px; }
+    .stats-row { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🎓</div>
+    <div class="logo-text">
+      <h1>ATTENDIX</h1>
+      <p>Smart Attendance System</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="clock">
+      <span id="timeDisplay">00:00:00</span>
+      <span class="date-str" id="dateDisplay">— — —</span>
+    </div>
+    <a class="btn-download" href="/download">
+      ⬇ Download Excel
+    </a>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('recognize')">📷 Attendance</div>
+  <div class="tab" onclick="switchTab('register')">➕ Register Student</div>
+  <div class="tab" onclick="switchTab('records')">📋 Records</div>
+  <div class="tab" onclick="switchTab('students')">👥 Students</div>
+</div>
+
+<!-- ============ RECOGNIZE ============ -->
+<main>
+<div id="panel-recognize" class="panel active">
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="val" id="statTotal">0</div>
+      <div class="lbl">Total Today</div>
+    </div>
+    <div class="stat-card">
+      <div class="val" id="statStudents">0</div>
+      <div class="lbl">Registered</div>
+    </div>
+    <div class="stat-card">
+      <div class="val" id="statScans">0</div>
+      <div class="lbl">Scans Made</div>
+    </div>
+  </div>
+
+  <div class="recognize-grid">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📸 Camera Feed</div>
+        <div class="mode-badge mode-idle" id="modeBadge">
+          <div class="dot"></div>
+          <span id="modeText">Idle</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="camera-wrapper" id="cameraWrapper">
+          <video id="videoFeed" autoplay playsinline muted></video>
+          <canvas id="overlayCanvas"></canvas>
+          <div class="scan-line" id="scanLine"></div>
+          <div class="corner corner-tl"></div>
+          <div class="corner corner-tr"></div>
+          <div class="corner corner-bl"></div>
+          <div class="corner corner-br"></div>
+          <div class="camera-placeholder" id="camPlaceholder">
+            <div class="icon">📷</div>
+            <p>Press Start to begin</p>
+          </div>
+        </div>
+        <div class="cam-controls">
+          <button class="btn btn-gold" onclick="startCamera()" id="btnStart">▶ Start Camera</button>
+          <button class="btn btn-danger" onclick="stopCamera()" id="btnStop" style="display:none">⏹ Stop</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📡 Recognition Feed</div>
+        <button class="btn btn-outline" style="width:auto;padding:6px 14px;font-size:0.72rem" onclick="clearFeed()">Clear</button>
+      </div>
+      <div class="card-body">
+        <div class="status-feed" id="statusFeed">
+          <div class="empty-state">
+            <div class="icon">👁</div>
+            <p>Recognition results will appear here</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ REGISTER ============ -->
+<div id="panel-register" class="panel">
+  <div class="register-grid">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📷 Capture Photo</div>
+      </div>
+      <div class="card-body">
+        <div class="reg-cam-wrapper" id="regCamWrapper">
+          <video id="regVideo" autoplay playsinline muted></video>
+          <canvas id="regCanvas"></canvas>
+          <img id="capturedPreview" class="captured-preview" alt="Captured">
+          <div class="corner corner-tl"></div>
+          <div class="corner corner-tr"></div>
+          <div class="corner corner-bl"></div>
+          <div class="corner corner-br"></div>
+          <div class="camera-placeholder" id="regPlaceholder">
+            <div class="icon">🤳</div>
+            <p>Open camera to capture</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+          <button class="btn btn-outline" onclick="openRegCamera()" id="btnRegCam">Open Camera</button>
+          <button class="btn btn-gold" onclick="capturePhoto()" id="btnCapture" style="display:none">📸 Capture</button>
+          <button class="btn btn-outline" onclick="retakePhoto()" id="btnRetake" style="display:none">↩ Retake</button>
+        </div>
+        <p style="font-size:0.75rem;color:var(--text-muted);margin-top:10px">Or upload an image file:</p>
+        <input type="file" id="imageUpload" accept="image/*" onchange="handleImageUpload(event)"
+          style="margin-top:8px;font-size:0.8rem;color:var(--text-muted);width:100%">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📝 Student Details</div>
+      </div>
+      <div class="card-body">
+        <div class="form-group">
+          <label class="form-label">Student Name</label>
+          <input class="form-input" type="text" id="regName" placeholder="e.g. Arjun Sharma">
+        </div>
+        <div id="regStatus" style="margin-bottom:16px;font-size:0.85rem;display:none"></div>
+        <button class="btn btn-success" onclick="registerStudent()">✓ Register Student</button>
+        <p style="font-size:0.75rem;color:var(--text-muted);margin-top:16px;line-height:1.6">
+          Make sure the face is clearly visible and well-lit.<br>
+          One student photo per registration.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ RECORDS ============ -->
+<div id="panel-records" class="panel">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📋 Attendance Records</div>
+      <a class="btn-download" href="/download" style="font-size:0.75rem;padding:8px 16px">⬇ Download</a>
+    </div>
+    <div class="card-body" style="padding:0">
+      <div class="table-wrapper" id="recordsTable">
+        <div class="empty-state"><div class="icon">📋</div><p>No records yet</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ STUDENTS ============ -->
+<div id="panel-students" class="panel">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">👥 Registered Students</div>
+      <span id="studentCount" style="color:var(--text-muted);font-size:0.8rem"></span>
+    </div>
+    <div class="card-body">
+      <div class="student-grid" id="studentGrid">
+        <div class="empty-state" style="grid-column:1/-1"><div class="icon">👤</div><p>No students registered yet</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+let stream = null;
+let regStream = null;
+let scanning = false;
+let capturedImageData = null;
+let scanInterval = null;
+let scanCount = 0;
+let todayCount = 0;
+let seenToday = new Set();
+
+// Clock
+function updateClock() {
+  const now = new Date();
+  document.getElementById('timeDisplay').textContent = now.toLocaleTimeString('en-US', {hour12: false});
+  document.getElementById('dateDisplay').textContent = now.toLocaleDateString('en-US', {weekday:'short', year:'numeric', month:'short', day:'numeric'});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const tabs = ['recognize','register','records','students'];
+  document.querySelectorAll('.tab')[tabs.indexOf(tab)].classList.add('active');
+  document.getElementById('panel-' + tab).classList.add('active');
+  if (tab === 'records') loadRecords();
+  if (tab === 'students') loadStudents();
+}
+
+function toast(msg, type='info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.borderColor = type === 'success' ? 'rgba(46,204,113,0.5)' : type === 'error' ? 'rgba(231,76,60,0.5)' : 'rgba(201,168,76,0.5)';
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// ---- ATTENDANCE CAMERA ----
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { width:640, height:480, facingMode:'user' }, audio: false });
+    const video = document.getElementById('videoFeed');
+    video.srcObject = stream;
+    await video.play();
+
+    document.getElementById('cameraWrapper').classList.add('camera-active');
+    document.getElementById('btnStart').style.display = 'none';
+    document.getElementById('btnStop').style.display = 'flex';
+    document.getElementById('modeBadge').className = 'mode-badge mode-active';
+    document.getElementById('modeText').textContent = 'Scanning';
+    scanning = true;
+
+    // Resize canvas to match video
+    video.onloadedmetadata = () => {
+      const cv = document.getElementById('overlayCanvas');
+      cv.width = video.videoWidth;
+      cv.height = video.videoHeight;
+    };
+
+    scanInterval = setInterval(captureAndRecognize, 2500);
+  } catch (e) {
+    toast('Camera access denied. Please allow camera permissions.', 'error');
+  }
+}
+
+function stopCamera() {
+  scanning = false;
+  clearInterval(scanInterval);
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  document.getElementById('cameraWrapper').classList.remove('camera-active');
+  document.getElementById('btnStart').style.display = 'flex';
+  document.getElementById('btnStop').style.display = 'none';
+  document.getElementById('modeBadge').className = 'mode-badge mode-idle';
+  document.getElementById('modeText').textContent = 'Idle';
+  clearCanvas();
+}
+
+function clearCanvas() {
+  const cv = document.getElementById('overlayCanvas');
+  const ctx = cv.getContext('2d');
+  ctx.clearRect(0, 0, cv.width, cv.height);
+}
+
+async function captureAndRecognize() {
+  if (!scanning) return;
+  const video = document.getElementById('videoFeed');
+  if (video.readyState < 2) return;
+
+  const tmpCanvas = document.createElement('canvas');
+  tmpCanvas.width = video.videoWidth;
+  tmpCanvas.height = video.videoHeight;
+  const ctx = tmpCanvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+  const imageData = tmpCanvas.toDataURL('image/jpeg', 0.8);
+
+  scanCount++;
+  document.getElementById('statScans').textContent = scanCount;
+
+  try {
+    const res = await fetch('/recognize', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ image: imageData })
+    });
+    const data = await res.json();
+    if (data.success && data.results) {
+      drawBoxes(data.results, video.videoWidth, video.videoHeight);
+      data.results.forEach(r => addStatusItem(r));
+    }
+  } catch (e) {}
+}
+
+function drawBoxes(results, vidW, vidH) {
+  const cv = document.getElementById('overlayCanvas');
+  cv.width = vidW;
+  cv.height = vidH;
+  const ctx = cv.getContext('2d');
+  ctx.clearRect(0, 0, vidW, vidH);
+
+  results.forEach(r => {
+    const [x, y, w, h] = r.bbox;
+    const mirroredX = vidW - x - w;
+    const color = r.name === 'Unknown' ? '#e74c3c' : '#c9a84c';
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 8;
+    ctx.strokeRect(mirroredX, y, w, h);
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = color + 'cc';
+    ctx.fillRect(mirroredX, y - 26, w, 24);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 13px Raleway, sans-serif';
+    ctx.fillText(r.name, mirroredX + 6, y - 8);
+  });
+}
+
+function addStatusItem(result) {
+  const feed = document.getElementById('statusFeed');
+  const empty = feed.querySelector('.empty-state');
+  if (empty) empty.remove();
+
+  let cls = 'error';
+  if (result.name !== 'Unknown' && result.marked) cls = 'success';
+  else if (result.name !== 'Unknown' && !result.marked) cls = 'warning';
+
+  if (result.name !== 'Unknown' && result.marked && !seenToday.has(result.name)) {
+    seenToday.add(result.name);
+    todayCount++;
+    document.getElementById('statTotal').textContent = todayCount;
+    toast(`✓ ${result.name} marked present!`, 'success');
+  }
+
+  const item = document.createElement('div');
+  item.className = 'status-item ' + cls;
+  const t = new Date().toLocaleTimeString('en-US', {hour12:true, hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  item.innerHTML = `
+    <span class="s-time">${t}</span>
+    <div class="s-name">${result.name === 'Unknown' ? '❓ Unknown Face' : '✓ ' + result.name}</div>
+    <div class="s-msg">${result.message} (conf: ${result.confidence})</div>
+  `;
+  feed.prepend(item);
+
+  // Keep max 20 items
+  while (feed.children.length > 20) feed.removeChild(feed.lastChild);
+}
+
+function clearFeed() {
+  document.getElementById('statusFeed').innerHTML = `<div class="empty-state"><div class="icon">👁</div><p>Recognition results will appear here</p></div>`;
+}
+
+// ---- REGISTER ----
+async function openRegCamera() {
+  try {
+    regStream = await navigator.mediaDevices.getUserMedia({ video: { width:640, height:480, facingMode:'user' }, audio: false });
+    const v = document.getElementById('regVideo');
+    v.srcObject = regStream;
+    await v.play();
+    v.style.display = 'block';
+    document.getElementById('regPlaceholder').style.display = 'none';
+    document.getElementById('capturedPreview').style.display = 'none';
+    document.getElementById('btnRegCam').style.display = 'none';
+    document.getElementById('btnCapture').style.display = 'flex';
+    document.getElementById('btnRetake').style.display = 'none';
+    capturedImageData = null;
+  } catch(e) {
+    toast('Camera access denied', 'error');
+  }
+}
+
+function capturePhoto() {
+  const v = document.getElementById('regVideo');
+  const c = document.getElementById('regCanvas');
+  c.width = v.videoWidth;
+  c.height = v.videoHeight;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(v, 0, 0);
+  capturedImageData = c.toDataURL('image/jpeg', 0.9);
+
+  const preview = document.getElementById('capturedPreview');
+  preview.src = capturedImageData;
+  preview.style.display = 'block';
+  v.style.display = 'none';
+
+  if (regStream) { regStream.getTracks().forEach(t => t.stop()); regStream = null; }
+  document.getElementById('btnCapture').style.display = 'none';
+  document.getElementById('btnRetake').style.display = 'flex';
+  toast('Photo captured! Fill in name and register.', 'success');
+}
+
+function retakePhoto() {
+  capturedImageData = null;
+  document.getElementById('capturedPreview').style.display = 'none';
+  document.getElementById('regVideo').style.display = 'none';
+  document.getElementById('regPlaceholder').style.display = 'flex';
+  document.getElementById('btnRegCam').style.display = 'flex';
+  document.getElementById('btnCapture').style.display = 'none';
+  document.getElementById('btnRetake').style.display = 'none';
+  document.getElementById('imageUpload').value = '';
+}
+
+function handleImageUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    capturedImageData = e.target.result;
+    const preview = document.getElementById('capturedPreview');
+    preview.src = capturedImageData;
+    preview.style.display = 'block';
+    document.getElementById('regVideo').style.display = 'none';
+    document.getElementById('regPlaceholder').style.display = 'none';
+    document.getElementById('btnRegCam').style.display = 'flex';
+    document.getElementById('btnCapture').style.display = 'none';
+    document.getElementById('btnRetake').style.display = 'flex';
+    if (regStream) { regStream.getTracks().forEach(t => t.stop()); regStream = null; }
+    toast('Image loaded!', 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+async function registerStudent() {
+  const name = document.getElementById('regName').value.trim();
+  if (!name) { toast('Please enter student name', 'error'); return; }
+  if (!capturedImageData) { toast('Please capture or upload a photo first', 'error'); return; }
+
+  const statusEl = document.getElementById('regStatus');
+  statusEl.style.display = 'block';
+  statusEl.innerHTML = '<span style="color:var(--gold)">⏳ Registering...</span>';
+
+  try {
+    const res = await fetch('/register', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ name, image: capturedImageData })
+    });
+    const data = await res.json();
+    if (data.success) {
+      statusEl.innerHTML = `<span style="color:#2ecc71">✓ ${data.message}</span>`;
+      toast(data.message, 'success');
+      document.getElementById('regName').value = '';
+      retakePhoto();
+      loadStudentCount();
+    } else {
+      statusEl.innerHTML = `<span style="color:#e74c3c">✗ ${data.message}</span>`;
+      toast(data.message, 'error');
+    }
+  } catch(e) {
+    statusEl.innerHTML = `<span style="color:#e74c3c">✗ Server error</span>`;
+  }
+}
+
+// ---- RECORDS ----
+async function loadRecords() {
+  const res = await fetch('/attendance');
+  const data = await res.json();
+  const container = document.getElementById('recordsTable');
+  if (!data.records.length) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>No attendance records yet</p></div>';
+    return;
+  }
+  container.innerHTML = `
+    <table>
+      <thead><tr>
+        <th>#</th><th>Student Name</th><th>Date</th><th>Time</th><th>Status</th>
+      </tr></thead>
+      <tbody>
+        ${data.records.map(r => `
+          <tr>
+            <td style="color:var(--text-muted)">${r.sno}</td>
+            <td><strong>${r.name}</strong></td>
+            <td>${r.date}</td>
+            <td style="color:var(--gold)">${r.time}</td>
+            <td><span class="badge badge-present">${r.status}</span></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+
+  // Update today count
+  const today = new Date().toLocaleDateString('en-GB').split('/').join('-');
+  const todayRecords = data.records.filter(r => r.date === new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'2-digit',year:'numeric'}).split('/').join('-'));
+  document.getElementById('statTotal').textContent = data.records.filter(r => {
+    const parts = new Date().toLocaleDateString('en-GB').split('/');
+    const today = `${parts[0]}-${parts[1]}-${parts[2]}`;
+    return r.date === today;
+  }).length || data.records.length;
+}
+
+// ---- STUDENTS ----
+async function loadStudents() {
+  const res = await fetch('/students');
+  const data = await res.json();
+  const grid = document.getElementById('studentGrid');
+  document.getElementById('studentCount').textContent = `${data.students.length} student${data.students.length !== 1 ? 's' : ''}`;
+  if (!data.students.length) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="icon">👤</div><p>No students registered yet</p></div>';
+    return;
+  }
+  grid.innerHTML = data.students.map(name => `
+    <div class="student-card">
+      <div class="student-avatar">👤</div>
+      <div class="student-name">${name}</div>
+      <button class="student-del" onclick="deleteStudent('${name}')">✕ Remove</button>
+    </div>
+  `).join('');
+}
+
+async function deleteStudent(name) {
+  if (!confirm(`Remove ${name} from the system?`)) return;
+  const res = await fetch('/delete_student', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ name })
+  });
+  const data = await res.json();
+  if (data.success) { toast(data.message, 'success'); loadStudents(); loadStudentCount(); }
+  else toast(data.message, 'error');
+}
+
+async function loadStudentCount() {
+  const res = await fetch('/students');
+  const data = await res.json();
+  document.getElementById('statStudents').textContent = data.students.length;
+}
+
+// Init
+loadStudentCount();
+</script>
+</body>
+</html>
